@@ -12,6 +12,8 @@ def loadProp(obj, dico, prop):
         setattr(obj, 'ID', dico['id'])
     elif prop == 'type':
         setattr(obj, 'TYPE', dico['type'])
+    elif prop == 'class':
+        setattr(obj, 'className', dico['class'])
     else:
         openIndex = prop.find('(')
         closeIndex = prop.find(')')
@@ -188,6 +190,9 @@ class Dweller(VaultObject):
         self.lastChildBorn = dwellers.findDwellerFromId(self.lastChildBorn)
         self.relations.mergeDwellers(dwellers)
 
+    def mergeRooms(self, vaultInfo):
+        self.savedRoom = vaultInfo.findRoomFromId(self.savedRoom)
+
 class Handy(VaultObject):
     def __init__(self, dico):
         raise Exception('I don\'t know anything about Mr. Handys... yet:%s' % dico)
@@ -203,10 +208,53 @@ class DwellersList(VaultObject):
                 return dweller
         return None
 
-class VaultInfo(VaultObject):
-    AUTOPROPS = ['Achievements', 'LunchBoxesByType', 'LunchBoxesCount', 'VaultName', 'dwellerFoodConsumption', 'dwellerWaterConsumption', 'emergencyData', 'inventory', 'rocks', 'roomConsumption', 'rooms', 'storage', 'wasteland']
+class RoomHealth(VaultObject):
+    AUTOPROPS = ['damageValue']
     def __str__(self):
-        return 'Vault %s' % self.VaultName
+        return str(self.damageValue)
+
+class Room(VaultObject):
+    AUTOPROPS = ['broken', 'class', 'col', 'currentState', 'currentStateName', '_deadDwellers', 'deserializeID', '_dwellers', 'emergencyDone', 'level', 'mergeLevel', '_mrHandyList', 'power', 'roomHealth(RoomHealth)', 'row', 'rushTask', 'storage(Storage)', 'type', 'ExperienceRewardIsDirty']
+    def __str__(self):
+        return '%s(Damage:%s,%s;%s/%s occupancy)' % (self.TYPE, str(self.roomHealth), self.currentStateName, self.getWorkersCount(), self.maxWorkers())
+
+    def maxWorkers(self):
+        if self.TYPE == 'Entrance':
+            return 2
+        elif self.className == 'Production' or self.className == 'Consumable':
+            return self.mergeLevel * 2
+        else:
+            return 0
+
+    def getWorkersCount(self):
+        return len(self.dwellers) + len(self.deadDwellers)
+
+    def mergeDwellers(self, dwellers):
+        for i in range(len(self.dwellers)):
+            self.dwellers[i] = dwellers.findDwellerFromId(self.dwellers[i])
+        for i in range(len(self.deadDwellers)):
+            self.deadDwellers[i] = dwellers.findDwellerFromId(self.deadDwellers[i])
+
+class Rock(VaultObject):
+    AUTOPROPS = ['c', 'r']
+    def __str__(self):
+        return 'Rock(%s,%s)' % (self.c, self.r)
+
+class VaultInfo(VaultObject):
+    AUTOPROPS = ['Achievements', 'LunchBoxesByType', 'LunchBoxesCount', 'VaultName', 'dwellerFoodConsumption', 'dwellerWaterConsumption', 'emergencyData', 'inventory(Inventory)', '_rocks(Rock)', 'roomConsumption', '_rooms(Room)', 'storage(Storage)', 'wasteland']
+    def __str__(self):
+        rooms = ','.join([str(room) for room in self.rooms])
+        return 'Vault %s[%s]' % (self.VaultName, rooms)
+    
+    def findRoomFromId(self, roomId):
+        for room in self.rooms:
+            if room.deserializeID == roomId:
+                return room
+        return None
+
+    def mergeDwellers(self, dwellers):
+        for room in self.rooms:
+            room.mergeDwellers(dwellers)
 
 class Vault(VaultObject):
     AUTOPROPS = ['DeathclawManager(DeathclawManager)', 'LunchBoxCollectWindow', 'PromoCodesWindow', 'constructMgr(ConstructManager)', 'deviceName', 'dwellerSpawner', 'dwellers(DwellersList)', 'happinessManager', 'localNotificationMgr', 'objectiveMgr', 'ratingMgr', 'refugeeSpawner', 'survivalW', 'swrveEventsManager', 'taskMgr', 'timeMgr', 'tutorialManager', 'unlockableMgr', 'vault(VaultInfo)']
@@ -215,11 +263,18 @@ class Vault(VaultObject):
         jsonObj = json.loads(jsonStr)
         super(Vault, self).__init__(jsonObj)
         self.mergeDwellers()
+        self.mergeRooms()
 
     def mergeDwellers(self):
         """Replace dwellers integer references by actual object references"""
         for dweller in self.dwellers.dwellers:
             dweller.mergeDwellers(self.dwellers)
+        self.vault.mergeDwellers(self.dwellers)
+
+    def mergeRooms(self):
+        """Replace rooms integer references by actual room references"""
+        for dweller in self.dwellers.dwellers:
+            dweller.mergeRooms(self.vault)
 
     def __str__(self):
         return str(self.vault) + ',dwellers=[' + str(self.dwellers) + ']'
