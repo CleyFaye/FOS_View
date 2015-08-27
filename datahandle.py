@@ -229,6 +229,12 @@ class Room(VaultObject):
     def getWorkersCount(self):
         return len(self.dwellers) + len(self.deadDwellers)
 
+    def getRoomWidth(self):
+        if self.TYPE == 'Elevator':
+            return 1
+        else:
+            return self.mergeLevel * 3
+
     def mergeDwellers(self, dwellers):
         for i in range(len(self.dwellers)):
             self.dwellers[i] = dwellers.findDwellerFromId(self.dwellers[i])
