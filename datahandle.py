@@ -38,89 +38,67 @@ def loadProps(obj, dico, propList):
     for prop in propList:
         loadProp(obj, dico, prop)
 
-class DeathclawManager(object):
+class VaultObject(object):
     def __init__(self, dico):
-        loadProps(self, dico, ['canDeathclawEmergencyOccurs', 'deathclawCooldownID', 'deathclawTotalExtraChance'])
+        loadProps(self, dico, self.__class__.AUTOPROPS)
 
+class DeathclawManager(VaultObject):
+    AUTOPROPS = ['canDeathclawEmergencyOccurs', 'deathclawCooldownID', 'deathclawTotalExtraChance']
     def __str__(self):
         return 'DeathclawManager'
 
-class ConstructManager(object):
-    def __init__(self, dico):
-        loadProps(self, dico, ['roomDeserializeID'])
-
+class ConstructManager(VaultObject):
+    AUTOPROPS = ['roomDeserializeID']
     def __str__(self):
         return 'ConstructManager'
 
-class EquipmentItem(object):
-    def __init__(self, dico):
-        loadProps(self, dico, ['hasBeenAssigned', 'hasRandonWeaponBeenAssigned', 'id', 'type'])
-
+class EquipmentItem(VaultObject):
+    AUTOPROPS = ['hasBeenAssigned', 'hasRandonWeaponBeenAssigned', 'id', 'type']
     def __str__(self):
         return 'Item(%s,%s)' % (self.TYPE, self.ID)
 
-class Inventory(object):
-    def __init__(self, dico):
-        self.items = []
-        for obj in dico['items']:
-            self.items.append(EquipmentItem(obj))
-
+class Inventory(VaultObject):
+    AUTOPROPS = ['_items(EquipmentItem)']
     def __str__(self):
         return 'Inventory[%s]' % [str(i) for i in self.items]
 
-class StorageBonus(object):
-    def __init__(self, dico):
-        loadProps(self, dico, ['Energy', 'Food', 'Lunchbox', 'Nuka', 'RadAway', 'StimPack', 'Water'])
-
+class StorageBonus(VaultObject):
+    AUTOPROPS = ['Energy', 'Food', 'Lunchbox', 'Nuka', 'RadAway', 'StimPack', 'Water']
     def __str__(self):
         return 'Bonus[Energy=%s, Food=%s, Lunchbox=%s, Nuka=%s, RadAway=%s, StimPack=%s, Water=%s]' % (self.Energy, self.Food, self.Lunchbox, self.Nuka, self.RadAway, self.StimPack, self.Water)
 
-class StorageResources(object):
-    def __init__(self, dico):
-        loadProps(self, dico, ['Energy', 'Food', 'Lunchbox', 'Nuka', 'RadAway', 'StimPack', 'Water'])
-
+class StorageResources(VaultObject):
+    AUTOPROPS = ['Energy', 'Food', 'Lunchbox', 'Nuka', 'RadAway', 'StimPack', 'Water']
     def __str__(self):
         return 'Resources[Energy=%s, Food=%s, Lunchbox=%s, Nuka=%s, RadAway=%s, StimPack=%s, Water=%s]' % (self.Energy, self.Food, self.Lunchbox, self.Nuka, self.RadAway, self.StimPack, self.Water)
 
-class Storage(object):
-    def __init__(self, dico):
-        loadProps(self, dico, ['bonus(StorageBonus)', 'resources(StorageResources)'])
-
+class Storage(VaultObject):
+    AUTOPROPS = ['bonus(StorageBonus)', 'resources(StorageResources)']
     def __str__(self):
         return 'Storage[%s,%s]' % (str(self.bonus), str(self.resources))
 
-class Equipment(object):
-    def __init__(self, dico):
-        loadProps(self, dico, ['inventory(Inventory)', 'storage(Storage)'])
-
+class Equipment(VaultObject):
+    AUTOPROPS = ['inventory(Inventory)', 'storage(Storage)']
     def __str__(self):
         return 'Equipment[%s]' % str(self.inventory)
 
-class Experience(object):
-    def __init__(self, dico):
-        loadProps(self, dico, ['accum', 'currentLevel', 'experienceValue', 'needLvUp', 'storage', 'wastelandExperience'])
-
+class Experience(VaultObject):
+    AUTOPROPS = ['accum', 'currentLevel', 'experienceValue', 'needLvUp', 'storage', 'wastelandExperience']
     def __str__(self):
         return 'exp=%s' % self.experienceValue
 
-class Happiness(object):
-    def __init__(self, dico):
-        loadProps(self, dico, ['happinessValue'])
-
+class Happiness(VaultObject):
+    AUTOPROPS = ['happinessValue']
     def __str__(self):
         return 'happiness=%s' % self.happinessValue
 
-class Health(object):
-    def __init__(self, dico):
-        loadProps(self, dico, ['healthValue', 'lastLevelUpdated', 'maxHealth', 'permaDeath', 'radiationValue'])
-
+class Health(VaultObject):
+    AUTOPROPS = ['healthValue', 'lastLevelUpdated', 'maxHealth', 'permaDeath', 'radiationValue']
     def __str__(self):
         return 'health=%s/%s (-%s)' % (self.healthValue, self.maxHealth, self.radiationValue)
 
-class Relations(object):
-    def __init__(self, dico):
-        loadProps(self, dico, ['_ascendants', 'lastPartner', 'partner', '_relations'])
-
+class Relations(VaultObject):
+    AUTOPROPS = ['_ascendants', 'lastPartner', 'partner', '_relations']
     def __str__(self):
         if self.ascendants[0] == None:
             parents = None
@@ -153,26 +131,21 @@ class Relations(object):
         self.lastPartner = dwellers.findDwellerFromId(self.lastPartner)
         self.partner = dwellers.findDwellerFromId(self.partner)
 
-class Stat(object):
-    def __init__(self, dico):
-        loadProps(self, dico, ['exp', 'mod', 'value'])
-
+class Stat(VaultObject):
+    AUTOPROPS = ['exp', 'mod', 'value']
     def __str__(self):
         if self.mod:
             return str(self.value) + '+' + str(self.mod) + '(' + str(self.value + self.mod) + ')'
         else:
             return str(self.value)
 
-class Stats(object):
-    def __init__(self, dico):
-        loadProps(self, dico, ['_stats(Stat)'])
-
+class Stats(VaultObject):
+    AUTOPROPS = ['_stats(Stat)']
     def __str__(self):
         return 'S=%s,P=%s,E=%s,C=%s,I=%s,A=%s,L=%s' % (str(self.stats[1]), str(self.stats[2]), str(self.stats[3]), str(self.stats[4]), str(self.stats[5]), str(self.stats[6]), str(self.stats[7]))
 
-class Dweller(object):
-    def __init__(self, dico):
-        loadProps(self, dico, ['WillGoToWasteland', 'assigned', 'babyReady', 'deathTime', 'gender', 'hair', 'hairColor', 'lastChildBorn', 'lastName', 'name', 'outfitColor', 'pendingExperienceReward', 'pregnant', 'rarity', 'savedRoom', 'sawIncident', 'serializeId', 'skinColor', 'equipedOutfit(EquipmentItem)', 'equipedWeapon(EquipmentItem)', 'equipment(Equipment)', 'experience(Experience)', 'happiness(Happiness)', 'health(Health)', 'relations(Relations)', 'stats(Stats)', 'faceMask', 'daysOnWasteland', 'hoursOnWasteland', 'uniqueData'])
+class Dweller(VaultObject):
+    AUTOPROPS = ['WillGoToWasteland', 'assigned', 'babyReady', 'deathTime', 'gender', 'hair', 'hairColor', 'lastChildBorn', 'lastName', 'name', 'outfitColor', 'pendingExperienceReward', 'pregnant', 'rarity', 'savedRoom', 'sawIncident', 'serializeId', 'skinColor', 'equipedOutfit(EquipmentItem)', 'equipedWeapon(EquipmentItem)', 'equipment(Equipment)', 'experience(Experience)', 'happiness(Happiness)', 'health(Health)', 'relations(Relations)', 'stats(Stats)', 'faceMask', 'daysOnWasteland', 'hoursOnWasteland', 'uniqueData']
 
     def getFullName(self):
         return self.name + ' ' + self.lastName
@@ -215,14 +188,12 @@ class Dweller(object):
         self.lastChildBorn = dwellers.findDwellerFromId(self.lastChildBorn)
         self.relations.mergeDwellers(dwellers)
 
-class Handy(object):
+class Handy(VaultObject):
     def __init__(self, dico):
         raise Exception('I don\'t know anything about Mr. Handys... yet:%s' % dico)
 
-class DwellersList(object):
-    def __init__(self, dico):
-        loadProps(self, dico, ['_dwellers(Dweller)', 'id', 'min_happiness', '_mrHandys(Handy)', 'mrhId'])
-
+class DwellersList(VaultObject):
+    AUTOPROPS = ['_dwellers(Dweller)', 'id', 'min_happiness', '_mrHandys(Handy)', 'mrhId']
     def __str__(self):
         return ','.join([str(x) for x in self.dwellers])
 
@@ -232,18 +203,17 @@ class DwellersList(object):
                 return dweller
         return None
 
-class VaultInfo(object):
-    def __init__(self, dico):
-        loadProps(self, dico, ['Achievements', 'LunchBoxesByType', 'LunchBoxesCount', 'VaultName', 'dwellerFoodConsumption', 'dwellerWaterConsumption', 'emergencyData', 'inventory', 'rocks', 'roomConsumption', 'rooms', 'storage', 'wasteland'])
-
+class VaultInfo(VaultObject):
+    AUTOPROPS = ['Achievements', 'LunchBoxesByType', 'LunchBoxesCount', 'VaultName', 'dwellerFoodConsumption', 'dwellerWaterConsumption', 'emergencyData', 'inventory', 'rocks', 'roomConsumption', 'rooms', 'storage', 'wasteland']
     def __str__(self):
         return 'Vault %s' % self.VaultName
 
-class Vault(object):
+class Vault(VaultObject):
+    AUTOPROPS = ['DeathclawManager(DeathclawManager)', 'LunchBoxCollectWindow', 'PromoCodesWindow', 'constructMgr(ConstructManager)', 'deviceName', 'dwellerSpawner', 'dwellers(DwellersList)', 'happinessManager', 'localNotificationMgr', 'objectiveMgr', 'ratingMgr', 'refugeeSpawner', 'survivalW', 'swrveEventsManager', 'taskMgr', 'timeMgr', 'tutorialManager', 'unlockableMgr', 'vault(VaultInfo)']
     def __init__(self, srcFile):
         jsonStr = decrypt(srcFile)
         jsonObj = json.loads(jsonStr)
-        loadProps(self, jsonObj, ['DeathclawManager(DeathclawManager)', 'LunchBoxCollectWindow', 'PromoCodesWindow', 'constructMgr(ConstructManager)', 'deviceName', 'dwellerSpawner', 'dwellers(DwellersList)', 'happinessManager', 'localNotificationMgr', 'objectiveMgr', 'ratingMgr', 'refugeeSpawner', 'survivalW', 'swrveEventsManager', 'taskMgr', 'timeMgr', 'tutorialManager', 'unlockableMgr', 'vault(VaultInfo)'])
+        super(Vault, self).__init__(jsonObj)
         self.mergeDwellers()
 
     def mergeDwellers(self):
