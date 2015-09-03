@@ -99,6 +99,19 @@ class Health(VaultObject):
     def __str__(self):
         return 'health=%s/%s (-%s)' % (self.healthValue, self.maxHealth, self.radiationValue)
 
+class FakeDeadDweller(object):
+    def __init__(self, oldId):
+        self.serializeId = 1000+oldId
+
+    def getFullName(self):
+        return 'DEAD'
+
+    def mergeDwellers(self, dwellers):
+        pass
+
+    def mergeRooms(self, dwellers):
+        pass
+
 class Relations(VaultObject):
     AUTOPROPS = ['_ascendants', 'lastPartner', 'partner', '_relations']
     def __str__(self):
@@ -132,9 +145,9 @@ class Relations(VaultObject):
             return None
         return (self.ascendants[0], self.ascendants[1])
 
-    def mergeDwellers(self, dwellers):
+    def mergeDwellers(self, dwellers, dweller):
         for i in range(6):
-            self.ascendants[i] = dwellers.findDwellerFromId(self.ascendants[i])
+            self.ascendants[i] = dwellers.findDwellerFromId(self.ascendants[i], dweller)
         self.lastPartner = dwellers.findDwellerFromId(self.lastPartner)
         self.partner = dwellers.findDwellerFromId(self.partner)
 
@@ -215,7 +228,7 @@ class Dweller(VaultObject):
 
     def mergeDwellers(self, dwellers):
         self.lastChildBorn = dwellers.findDwellerFromId(self.lastChildBorn)
-        self.relations.mergeDwellers(dwellers)
+        self.relations.mergeDwellers(dwellers, self)
 
     def mergeRooms(self, vaultInfo):
         self.savedRoom = vaultInfo.findRoomFromId(self.savedRoom)
@@ -230,8 +243,17 @@ class DwellersList(VaultObject):
     def __str__(self):
         return ','.join([str(x) for x in self.dwellers])
 
-    def findDwellerFromId(self, dwellerId):
+    def findDwellerFromId(self, dwellerId, limiter = None):
+        if dwellerId == -1:
+            return None
         for dweller in self.dwellers:
+            if dweller == limiter:
+                for deadDweller in self.dwellers:
+                    if deadDweller.serializeId == 1000 + dwellerId:
+                        return deadDweller
+                newDweller = FakeDeadDweller(dwellerId)
+                self.dwellers.append(newDweller)
+                return newDweller
             if dweller.serializeId == dwellerId:
                 return dweller
         return None
@@ -300,6 +322,9 @@ class Vault(VaultObject):
         super(Vault, self).__init__(jsonObj)
         self.mergeDwellers()
         self.mergeRooms()
+        print('dwellerlist')
+        for d in self.dwellers.dwellers:
+            print d.serializeId
 
     def mergeDwellers(self):
         """Replace dwellers integer references by actual object references"""

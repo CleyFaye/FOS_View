@@ -82,10 +82,13 @@ class Couple(object):
         Couple.counter = Couple.counter + 1
 
     def isParentOf(self, dweller):
-        rel = dweller.relations
-        l = rel.ascendants[0]
-        r = rel.ascendants[1]
-        return (l == self.father and r == self.mother) or (l == self.mother and r == self.father)
+        try:
+            rel = dweller.relations
+            l = rel.ascendants[0]
+            r = rel.ascendants[1]
+            return l == self.father and r == self.mother
+        except AttributeError:
+            return False
 
     def coupleId(self):
         return 'couple%s' % self.index
@@ -114,12 +117,15 @@ class Couple(object):
     def create(dwellers):
         couplesDwellers = []
         for dweller in dwellers:
-            rel = dweller.relations
-            if rel.ascendants[0]:
-                if rel.ascendants[0].gender == 2:
-                    couple = {'father': rel.ascendants[0], 'mother': rel.ascendants[1]}
-                else:
-                    couple = {'father': rel.ascendants[1], 'mother': rel.ascendants[0]}
+            try:
+                rel = dweller.relations
+                father = rel.ascendants[0]
+                mother = rel.ascendants[1]
+            except AttributeError:
+                father = None
+                mother = None
+            if father:
+                couple = {'father': father, 'mother': mother}
                 if couple not in couplesDwellers:
                     couplesDwellers.append(couple)
         result = []
@@ -231,7 +237,10 @@ def dwellerDotName(dweller, role):
     return name
 
 def specialString(dweller):
-    stats = dweller.stats
+    try:
+        stats = dweller.stats
+    except AttributeError:
+        return ''
     merged = {}
     for statName in 'SPECIAL':
         merged[statName] = stats.get(statName).getFullValue()
@@ -240,19 +249,22 @@ def specialString(dweller):
 def dotOutputDweller(dweller, output):
     roles = getRoles(dweller)
     for role in roles:
-        if dweller.gender == 1:
-            outlineColor = 'pink'
-        else:
-            outlineColor = 'blue'
-        if dweller.health.healthValue <= 0:
-            backgroundColor = 'gray'
-        else:
-            backgroundColor = 'white'
+        try:
+            if dweller.gender == 1:
+                outlineColor = 'pink'
+            else:
+                outlineColor = 'blue'
+            if dweller.health.healthValue <= 0:
+                backgroundColor = 'gray'
+            else:
+                backgroundColor = 'white'
+        except AttributeError:
+            outlineColor = 'black'
+            backgroundColor = 'red'
         label = '%s\\n%s' % (dweller.getFullName(), specialString(dweller))
         output.write('%(id)s [shape=box,label="%(label)s",color="%(outline)s",bgcolor="%(bg)s"]\n' % {'id': role, 'label': label, 'outline': outlineColor, 'bg': backgroundColor})
     if getCoupleCounter(dweller) > 10000:
         for role in roles:
-            print('Roles:' + role)
             if role[-5:] == 'child':
                 continue
             if isAChild(dweller):
@@ -270,6 +282,9 @@ def main(config):
         for brotherhood in brotherhoods:
             brotherhood.dotOutput(output)
         for dweller in vault.dwellers.dwellers:
+            if dweller.serializeId == 1005:
+                print 'derp'
+                print dweller
             dotOutputDweller(dweller, output)
         output.write('}\n')
 
