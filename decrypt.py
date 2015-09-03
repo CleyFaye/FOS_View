@@ -22,7 +22,7 @@ def decrypt(srcFile):
     cipher = b64decode(rawData)
     key = PBKDF2(cryptoInfo.passPhrase, cryptoInfo.initVector, cryptoInfo.keySize / 8)
     ctx = AES.new(key, AES.MODE_CBC, cryptoInfo.initVector)
-    return ctx.decrypt(cipher)
+    return ctx.decrypt(cipher).replace('\x04', '')
 
 if __name__ == '__main__':
     raise Exception('This program cannot be run in DOS mode')

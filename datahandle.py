@@ -127,6 +127,11 @@ class Relations(VaultObject):
                 result = '%s,partner:%s' % (result, partner)
         return result
 
+    def getParents(self):
+        if self.ascendants[0] == None or self.ascendants[1] == None:
+            return None
+        return (self.ascendants[0], self.ascendants[1])
+
     def mergeDwellers(self, dwellers):
         for i in range(6):
             self.ascendants[i] = dwellers.findDwellerFromId(self.ascendants[i])
@@ -141,10 +146,32 @@ class Stat(VaultObject):
         else:
             return str(self.value)
 
+    def getFullValue(self):
+        return self.value + self.mod
+
 class Stats(VaultObject):
     AUTOPROPS = ['_stats(Stat)']
     def __str__(self):
         return 'S=%s,P=%s,E=%s,C=%s,I=%s,A=%s,L=%s' % (str(self.stats[1]), str(self.stats[2]), str(self.stats[3]), str(self.stats[4]), str(self.stats[5]), str(self.stats[6]), str(self.stats[7]))
+
+    def get(self, statName):
+        statLetter = statName[0].upper()
+        if statLetter == 'S':
+            return self.stats[1]
+        elif statLetter == 'P':
+            return self.stats[2]
+        elif statLetter == 'E':
+            return self.stats[3]
+        elif statLetter == 'C':
+            return self.stats[4]
+        elif statLetter == 'I':
+            return self.stats[5]
+        elif statLetter == 'A':
+            return self.stats[6]
+        elif statLetter == 'L':
+            return self.stats[7]
+        else:
+            return None
 
 class Dweller(VaultObject):
     AUTOPROPS = ['WillGoToWasteland', 'assigned', 'babyReady', 'deathTime', 'gender', 'hair', 'hairColor', 'lastChildBorn', 'lastName', 'name', 'outfitColor', 'pendingExperienceReward', 'pregnant', 'rarity', 'savedRoom', 'sawIncident', 'serializeId', 'skinColor', 'equipedOutfit(EquipmentItem)', 'equipedWeapon(EquipmentItem)', 'equipment(Equipment)', 'experience(Experience)', 'happiness(Happiness)', 'health(Health)', 'relations(Relations)', 'stats(Stats)', 'faceMask', 'daysOnWasteland', 'hoursOnWasteland', 'uniqueData']
@@ -266,6 +293,8 @@ class Vault(VaultObject):
     AUTOPROPS = ['DeathclawManager(DeathclawManager)', 'LunchBoxCollectWindow', 'PromoCodesWindow', 'constructMgr(ConstructManager)', 'deviceName', 'dwellerSpawner', 'dwellers(DwellersList)', 'happinessManager', 'localNotificationMgr', 'objectiveMgr', 'ratingMgr', 'refugeeSpawner', 'survivalW', 'swrveEventsManager', 'taskMgr', 'timeMgr', 'tutorialManager', 'unlockableMgr', 'vault(VaultInfo)']
     def __init__(self, srcFile):
         jsonStr = decrypt(srcFile)
+        with open('debug.txt', 'w') as out:
+            out.write(jsonStr)
         jsonObj = json.loads(jsonStr)
         super(Vault, self).__init__(jsonObj)
         self.mergeDwellers()

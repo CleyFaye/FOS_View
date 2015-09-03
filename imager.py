@@ -43,6 +43,16 @@ def main(config):
         drawer.ellipse(pos, outline = 'white', fill='gray')
     img.save('output.png', 'PNG')
 
+    with open('test.dot', 'w') as out:
+        out.write('digraph A {\n')
+        for dweller in vault.dwellers.dwellers:
+            out.write('dweller_%s [label="%s"];\n' % (dweller.serializeId, dweller.getFullName()))
+            parents = dweller.relations.getParents()
+            if parents:
+                out.write('dweller_%s -> dweller_%s;\n' % (parents[0].serializeId, dweller.serializeId))
+                out.write('dweller_%s -> dweller_%s;\n' % (parents[1].serializeId, dweller.serializeId))
+        out.write('}\n')
+
 if __name__ == '__main__':
     config = {
             'roomWidth': 30,
