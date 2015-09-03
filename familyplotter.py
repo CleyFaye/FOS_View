@@ -3,12 +3,34 @@
 from datahandle import Vault
 from codecs import open
 
+def incCoupleCounter(dweller):
+    try:
+        dweller.couplesCount = dweller.couplesCount + 1
+    except AttributeError:
+        dweller.couplesCount = 1
+
+def getCoupleCounter(dweller):
+    try:
+        return dweller.couplesCount
+    except AttributeRror:
+        return 0
+
+def setAsChild(dweller):
+    dweller.isAChild = True
+
+def isAChild(dweller):
+    try:
+        return dweller.isAChild
+    except AttributeError:
+        return False
+
 class Couple(object):
     counter = 0
 
     def __init__(self, father, mother):
         self.father = father
         self.mother = mother
+        [incCoupleCounter(x) for x in (father,mother)]
         self.index = Couple.counter
         Couple.counter = Couple.counter + 1
 
@@ -18,14 +40,17 @@ class Couple(object):
         r = rel.ascendants[1]
         return (l == self.father and r == self.mother) or (l == self.mother and r == self.father)
 
+    def coupleId(self):
+        return 'couple%s' % self.index
+
     def mergedDotName(self):
-        fatherDot = dwellerDotName(self.father)
-        motherDot = dwellerDotName(self.mother)
+        fatherDot = dwellerDotName(self.father, self.coupleId())
+        motherDot = dwellerDotName(self.mother, self.coupleId())
         return '%sAnd%s' % (fatherDot, motherDot)
 
     def dotOutput(self, output):
-        fatherDot = dwellerDotName(self.father)
-        motherDot = dwellerDotName(self.mother)
+        fatherDot = dwellerDotName(self.father, self.coupleId())
+        motherDot = dwellerDotName(self.mother, self.coupleId())
         mergeNode = self.mergedDotName()
         output.write('subgraph couple_%s_graph {\n' % self.index)
         output.write('rank=same\n')
@@ -59,6 +84,7 @@ class Brotherhoods(object):
     def __init__(self, brothers, couple):
         self.brothers = brothers[:]
         self.parents = couple
+        [setAsChild(x) for x in brothers]
         self.index = Brotherhoods.counter
         Brotherhoods.counter = Brotherhoods.counter + 1
 
@@ -79,7 +105,7 @@ class Brotherhoods(object):
         right = None
         for brother in self.brothers:
             if index != middle:
-                name = '%s_top' % dwellerDotName(brother)
+                name = dwellerDotName(brother, 'topnode')
                 output.write('%s [shape=point]\n' % name)
             else:
                 name = lvl1Node
@@ -91,22 +117,23 @@ class Brotherhoods(object):
             left = right
             right = name
             if index > 1:
-                output.write('%s->%s [dir=none]\n' %(left, right))
+                if needMiddle or index != rightLink:
+                    output.write('%s->%s [dir=none]\n' %(left, right))
             index = index + 1
         output.write('}\n')
         if False:
             output.write('subgraph brotherhood_%s_graph {\n' % self.index)
             output.write('rank=same\n')
             for brother in self.brothers:
-                output.write('%s\n' % dwellerDotName(brother))
+                output.write('%s\n' % dwellerDotName(brother, 'child'))
             output.write('}\n')
         index = 1
         for brother in self.brothers:
             if index == middle:
                 topName = lvl1Node
             else:
-                topName = '%s_top' % dwellerDotName(brother)
-            output.write('%(top)s->%(id)s [dir=none]\n' % {'top': topName, 'id': dwellerDotName(brother)})
+                topName = dwellerDotName(brother, 'topnode')
+            output.write('%(top)s->%(id)s [dir=none]\n' % {'top': topName, 'id': dwellerDotName(brother, 'child')})
             index = index + 1
         output.write('%s->%s [dir=none]\n' % (self.parents.mergedDotName(), lvl1Node))
 
@@ -122,8 +149,21 @@ class Brotherhoods(object):
                 result.append(Brotherhoods(brothers, couple))
         return result
 
-def dwellerDotName(dweller):
-    return 'dweller_%s' % dweller.serializeId
+def dwellerDotName(dweller, role):
+    # Here's how I'll do it:
+    # If we want a "topnode" node, always give it. It is used for structure.
+    # If we want a "child" node, always give id. Child nodes can only happen once.
+    # If we want a coupleX node...
+    # - if the dweller is only in ONE couple, return either the "child" node, or the "unique" node, whichever exist.
+    # - if the dweller is part of multiple couples, produce multiple "coupleX" nodes. Later, if:
+    #   - the dweller is also a child, link them to the child node
+    #   - the dweller is not a child, link all "secondary" coupleX nodes to the couple0 node
+    if role == 'topnode':
+        return 'dweller_%s_topnode' % dweller.serializeId
+    elif role == 'child':
+        return 'dweller_%s_child' % dweller.serializeId
+    else:
+        return 'dweller_%s_%s' % (dweller.serializeId, role)
 
 def specialString(dweller):
     stats = dweller.stats
@@ -142,7 +182,7 @@ def dotOutputDweller(dweller, output):
     else:
         backgroundColor = 'white'
     label = '%s\\n%s' % (dweller.getFullName(), specialString(dweller))
-    output.write('%(id)s [shape=box,label="%(label)s",color="%(outline)s",bgcolor="%(bg)s"]\n' % {'id': dwellerDotName(dweller), 'label': label, 'outline': outlineColor, 'bg': backgroundColor})
+    output.write('%(id)s [shape=box,label="%(label)s",color="%(outline)s",bgcolor="%(bg)s"]\n' % {'id': dwellerDotName(dweller, 'base'), 'label': label, 'outline': outlineColor, 'bg': backgroundColor})
 
 def main(config):
     vault = Vault('data/Vault1.sav')
@@ -150,8 +190,8 @@ def main(config):
     brotherhoods = Brotherhoods.create(vault.dwellers.dwellers, couples)
     with open('family.dot' ,'w', encoding='utf-8') as output:
         output.write('digraph A {\n')
-        for dweller in vault.dwellers.dwellers:
-            dotOutputDweller(dweller, output)
+#        for dweller in vault.dwellers.dwellers:
+#            dotOutputDweller(dweller, output)
         for couple in couples:
             couple.dotOutput(output)
         for brotherhood in brotherhoods:
