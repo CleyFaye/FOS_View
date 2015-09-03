@@ -3,6 +3,29 @@
 from datahandle import Vault
 from codecs import open
 
+def getColorFromId(Id):
+    Id = Id % 10
+    if Id == 0:
+        return 'red'
+    elif Id == 1:
+        return 'green'
+    elif Id == 2:
+        return 'blue'
+    elif Id == 3:
+        return 'cyan'
+    elif Id == 4:
+        return 'magenta'
+    elif Id == 5:
+        return 'yellow'
+    elif Id == 6:
+        return 'pink'
+    elif Id == 7:
+        return 'palegreen'
+    elif Id == 8:
+        return 'navy'
+    elif Id == 9:
+        return 'sienna'
+
 def incCoupleCounter(dweller):
     try:
         dweller.couplesCount = dweller.couplesCount + 1
@@ -12,8 +35,19 @@ def incCoupleCounter(dweller):
 def getCoupleCounter(dweller):
     try:
         return dweller.couplesCount
-    except AttributeRror:
+    except AttributeError:
         return 0
+
+def setDwellerFirstCoupleRole(dweller, role):
+    if role == 'couple0':
+        raise Exception("pills here")
+    try:
+        return dweller.firstCouple
+    except AttributeError:
+        dweller.firstCouple = role
+
+def getDwellerFirstCouple(dweller):
+    return dweller.firstCouple
 
 def setAsChild(dweller):
     dweller.isAChild = True
@@ -23,6 +57,19 @@ def isAChild(dweller):
         return dweller.isAChild
     except AttributeError:
         return False
+
+def addOutputNodeToDweller(dweller, name):
+    try:
+        if name not in dweller.roles:
+            dweller.roles.append(name)
+    except AttributeError:
+        dweller.roles = [name]
+
+def getRoles(dweller):
+    try:
+        return dweller.roles
+    except AttributeError:
+        return ['dweller_%s_solonely' % dweller.serializeId]
 
 class Couple(object):
     counter = 0
@@ -53,12 +100,14 @@ class Couple(object):
         motherDot = dwellerDotName(self.mother, self.coupleId())
         mergeNode = self.mergedDotName()
         output.write('subgraph couple_%s_graph {\n' % self.index)
+        output.write('rankdir=LR\n')
+        output.write('style=invis\n')
         output.write('rank=same\n')
         output.write('%s\n' % fatherDot)
         output.write('%s\n' % motherDot)
         output.write('%s [shape=point]\n' % mergeNode)
-        output.write('%s -> %s [dir=none]\n' % (fatherDot, mergeNode))
-        output.write('%s -> %s [dir=none]\n' % (mergeNode, motherDot))
+        output.write('%s -> %s [dir=none,weight=1000,penwidth=2,color=%s]\n' % (fatherDot, mergeNode, getColorFromId(self.index)))
+        output.write('%s -> %s [dir=none,weight=1000,penwidth=2,color=%s]\n' % (mergeNode, motherDot, getColorFromId(self.index)))
         output.write('}\n')
 
     @staticmethod
@@ -91,6 +140,8 @@ class Brotherhoods(object):
     def dotOutput(self, output):
         lvl1Node = '%sSons' % self.parents.mergedDotName()
         output.write('subgraph brotherhood_lvl1_%s_graph {\n' % self.index)
+        output.write('rankdir=LR\n')
+        output.write('style=invis\n')
         output.write('rank=same\n')
         output.write('%s [shape=point]\n' % lvl1Node)
         index = 1
@@ -111,18 +162,20 @@ class Brotherhoods(object):
                 name = lvl1Node
             if not needMiddle:
                 if index == leftLink:
-                    output.write('%s->%s [dir=none]\n' % (name, lvl1Node))
+                    output.write('%s->%s [dir=none,color=gray]\n' % (name, lvl1Node))
                 if index == rightLink:
-                    output.write('%s->%s [dir=none]\n' % (lvl1Node, name))
+                    output.write('%s->%s [dir=none,color=gray]\n' % (lvl1Node, name))
             left = right
             right = name
             if index > 1:
                 if needMiddle or index != rightLink:
-                    output.write('%s->%s [dir=none]\n' %(left, right))
+                    output.write('%s->%s [dir=none,color=gray]\n' %(left, right))
             index = index + 1
         output.write('}\n')
         if False:
             output.write('subgraph brotherhood_%s_graph {\n' % self.index)
+            output.write('rankdir=LR\n')
+            output.write('style=invis\n')
             output.write('rank=same\n')
             for brother in self.brothers:
                 output.write('%s\n' % dwellerDotName(brother, 'child'))
@@ -133,7 +186,7 @@ class Brotherhoods(object):
                 topName = lvl1Node
             else:
                 topName = dwellerDotName(brother, 'topnode')
-            output.write('%(top)s->%(id)s [dir=none]\n' % {'top': topName, 'id': dwellerDotName(brother, 'child')})
+            output.write('%(top)s->%(id)s [dir=none,color="gray"]\n' % {'top': topName, 'id': dwellerDotName(brother, 'child')})
             index = index + 1
         output.write('%s->%s [dir=none]\n' % (self.parents.mergedDotName(), lvl1Node))
 
@@ -159,11 +212,23 @@ def dwellerDotName(dweller, role):
     #   - the dweller is also a child, link them to the child node
     #   - the dweller is not a child, link all "secondary" coupleX nodes to the couple0 node
     if role == 'topnode':
-        return 'dweller_%s_topnode' % dweller.serializeId
+        name = 'dweller_%s_topnode' % dweller.serializeId
     elif role == 'child':
-        return 'dweller_%s_child' % dweller.serializeId
+        name = 'dweller_%s_child' % dweller.serializeId
+        addOutputNodeToDweller(dweller, name)
     else:
-        return 'dweller_%s_%s' % (dweller.serializeId, role)
+        if getCoupleCounter(dweller) == 1:
+            if isAChild(dweller):
+                name = dwellerDotName(dweller, 'child')
+            else:
+                name = 'dweller_%s_%s' % (dweller.serializeId, role)
+                addOutputNodeToDweller(dweller, name)
+                setDwellerFirstCoupleRole(dweller, name)
+        else:
+            name = 'dweller_%s_%s' % (dweller.serializeId, role)
+            addOutputNodeToDweller(dweller, name)
+            setDwellerFirstCoupleRole(dweller, name)
+    return name
 
 def specialString(dweller):
     stats = dweller.stats
@@ -173,29 +238,39 @@ def specialString(dweller):
     return 'S:%(S)s P:%(P)s E:%(E)s\\nC:%(C)s I:%(I)s A:%(A)s\\nL%(L)s' % merged
 
 def dotOutputDweller(dweller, output):
-    if dweller.gender == 1:
-        outlineColor = 'pink'
-    else:
-        outlineColor = 'blue'
-    if dweller.health.healthValue <= 0:
-        backgroundColor = 'gray'
-    else:
-        backgroundColor = 'white'
-    label = '%s\\n%s' % (dweller.getFullName(), specialString(dweller))
-    output.write('%(id)s [shape=box,label="%(label)s",color="%(outline)s",bgcolor="%(bg)s"]\n' % {'id': dwellerDotName(dweller, 'base'), 'label': label, 'outline': outlineColor, 'bg': backgroundColor})
+    roles = getRoles(dweller)
+    for role in roles:
+        if dweller.gender == 1:
+            outlineColor = 'pink'
+        else:
+            outlineColor = 'blue'
+        if dweller.health.healthValue <= 0:
+            backgroundColor = 'gray'
+        else:
+            backgroundColor = 'white'
+        label = '%s\\n%s' % (dweller.getFullName(), specialString(dweller))
+        output.write('%(id)s [shape=box,label="%(label)s",color="%(outline)s",bgcolor="%(bg)s"]\n' % {'id': role, 'label': label, 'outline': outlineColor, 'bg': backgroundColor})
+    if getCoupleCounter(dweller) > 10000:
+        for role in roles:
+            print('Roles:' + role)
+            if role[-5:] == 'child':
+                continue
+            if isAChild(dweller):
+                output.write('%s -> %s [weight=-1000,style=dotted]\n' % (role, dwellerDotName(dweller, 'child')))
 
 def main(config):
-    vault = Vault('data/Vault1.sav')
+    vault = Vault('data/VaultEd.sav')
     couples = Couple.create(vault.dwellers.dwellers)
     brotherhoods = Brotherhoods.create(vault.dwellers.dwellers, couples)
     with open('family.dot' ,'w', encoding='utf-8') as output:
         output.write('digraph A {\n')
-#        for dweller in vault.dwellers.dwellers:
-#            dotOutputDweller(dweller, output)
+        output.write('rankdir=TB\n')
         for couple in couples:
             couple.dotOutput(output)
         for brotherhood in brotherhoods:
             brotherhood.dotOutput(output)
+        for dweller in vault.dwellers.dwellers:
+            dotOutputDweller(dweller, output)
         output.write('}\n')
 
 if __name__ == '__main__':

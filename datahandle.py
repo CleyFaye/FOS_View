@@ -222,7 +222,8 @@ class Dweller(VaultObject):
 
 class Handy(VaultObject):
     def __init__(self, dico):
-        raise Exception('I don\'t know anything about Mr. Handys... yet:%s' % dico)
+        pass
+        #raise Exception('I don\'t know anything about Mr. Handys... yet:%s' % dico)
 
 class DwellersList(VaultObject):
     AUTOPROPS = ['_dwellers(Dweller)', 'id', 'min_happiness', '_mrHandys(Handy)', 'mrhId']
