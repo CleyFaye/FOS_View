@@ -1,0 +1,25 @@
+Simple Fallout Shelter file viewer in Python.
+
+This is a mere prototype. It allows rendering a vault rooms layout, and a vault family tree.
+The original goal was to set up a webservice were people could upload their vault, get a nice URL to show it off and compete in a score-based ladder.
+This project might or might not progress according to time constraints and public interest :)
+
+Known bugs:
+ * The parser is extremely rigid and is known to work for sure on two test files. Anything more than that is pure luck...
+ * Room layout rendering is very primitive, done as a PoC.
+ * Family tree rendering is limited by two factors: 
+   - families in the vault can be quite messy
+   - the save file can actually "lose" some dwellers and replace them with other dwellers having the same ID, causing invalid parents to be picked. There's some safeguard around that that will just show a DEAD dweller...
+
+Known issues (less than a bug, but more than an annoyance):
+ * The DEAD dweller thing mentionned above... doesn't show actual relationship between childs sharing a disappeared dweller parent.
+ * The code is already very old, and written as a PoC in mere minutes. It quickly derailed in an exercise in doing funky stuff with JSON.
+ * Direct consequence is that it's dirty. Like, have a barf bag ready before reading.
+ * Other direct consequence is that things kinda stopped in their tracks; while it *works* (sometimes), most of the vault parsing stopped after getting dwellers relationships and room layout.
+
+Requirements:
+ * python 2.7 (or more, but no 3.0)
+ * python-crypto stuff
+ * PIL for the room layout thingy
+ * pydot for PNG rendering of the family tree (can otherwise output Graphviz DOT files without any extra dependency)
+
