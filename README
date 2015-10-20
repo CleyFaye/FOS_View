@@ -4,6 +4,9 @@ This is a mere prototype. It allows rendering a vault rooms layout, and a vault 
 The original goal was to set up a webservice were people could upload their vault, get a nice URL to show it off and compete in a score-based ladder.
 This project might or might not progress according to time constraints and public interest :)
 
+Example of family trees output (sorry, I only have messed up Vaults to test on):
+https://imgur.com/a/AS90e
+
 Known bugs:
  * The parser is extremely rigid and is known to work for sure on two test files. Anything more than that is pure luck...
  * Room layout rendering is very primitive, done as a PoC.
