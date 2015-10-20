@@ -26,3 +26,6 @@ Requirements:
  * PIL for the room layout thingy
  * pydot for PNG rendering of the family tree (can otherwise output Graphviz DOT files without any extra dependency)
 
+Usages:
+imager.py draws a rough layout of the rooms.
+familyplotter.py produce either a graphviz file or a png file. Both takes at least an "--input" parameter indicating the path to the vault file; other than that they have sensible defaults. Full help can be seen using "--help".
