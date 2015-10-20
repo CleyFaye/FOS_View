@@ -271,7 +271,7 @@ def dotOutputDweller(dweller, output):
                 output.write('%s -> %s [weight=-1000,style=dotted]\n' % (role, dwellerDotName(dweller, 'child')))
 
 def main(config):
-    vault = Vault('data/VaultEd.sav')
+    vault = Vault('data/Vault1_New.sav')
     couples = Couple.create(vault.dwellers.dwellers)
     brotherhoods = Brotherhoods.create(vault.dwellers.dwellers, couples)
     with open('family.dot' ,'w', encoding='utf-8') as output:
@@ -282,9 +282,6 @@ def main(config):
         for brotherhood in brotherhoods:
             brotherhood.dotOutput(output)
         for dweller in vault.dwellers.dwellers:
-            if dweller.serializeId == 1005:
-                print 'derp'
-                print dweller
             dotOutputDweller(dweller, output)
         output.write('}\n')
 

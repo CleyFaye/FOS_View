@@ -25,9 +25,10 @@ def loadProp(obj, dico, prop):
         if prop[0:1] == '_':
             prop = prop[1:]
             result = []
-            for subDic in dico[prop]:
-                newInstance = loadFromDico(subDic, className)
-                result.append(newInstance)
+            if prop in dico:
+                for subDic in dico[prop]:
+                    newInstance = loadFromDico(subDic, className)
+                    result.append(newInstance)
         else:
             if not prop in dico:
                 result = None
@@ -322,9 +323,6 @@ class Vault(VaultObject):
         super(Vault, self).__init__(jsonObj)
         self.mergeDwellers()
         self.mergeRooms()
-        print('dwellerlist')
-        for d in self.dwellers.dwellers:
-            print d.serializeId
 
     def mergeDwellers(self):
         """Replace dwellers integer references by actual object references"""
