@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from datahandle import Vault
+from fosfile import Vault
 from PIL import Image, ImageDraw
 
 def getCoordinates(col, row, width, config):
@@ -11,8 +11,6 @@ def getCoordinates(col, row, width, config):
     return ((x1, y1), (x2, y2))
 
 def enlargeRect(rect, point):
-    print rect
-    print point
     if point[0] < rect[0]:
         rect[0] = point[0]
     if point[0] > rect[2]:
@@ -23,14 +21,14 @@ def enlargeRect(rect, point):
         rect[3] = point[1]
 
 def main(config):
-    vault = Vault('data/Vault1.sav')
+    vault = Vault('data/Vault1_New.sav')
     rect = [0, 0, 0, 0]
     for room in vault.vault.rooms:
         pos = getCoordinates(room.col, room.row, room.getRoomWidth(), config)
         enlargeRect(rect, pos[0])
         enlargeRect(rect, pos[1])
     for rock in vault.vault.rocks:
-        pos = getCoordinates(rock.c, rock.r, 1, config)
+        pos = getCoordinates(rock.c, rock.r, 2, config)
         enlargeRect(rect, pos[0])
         enlargeRect(rect, pos[1])
     img = Image.new('RGB', (rect[2], rect[3]))
@@ -39,19 +37,9 @@ def main(config):
         pos = getCoordinates(room.col, room.row, room.getRoomWidth(), config)
         drawer.rectangle(pos, fill='red', outline='white')
     for rock in vault.vault.rocks:
-        pos = getCoordinates(rock.c, rock.r, 1, config)
+        pos = getCoordinates(rock.c, rock.r, 2, config)
         drawer.ellipse(pos, outline = 'white', fill='gray')
     img.save('output.png', 'PNG')
-
-    with open('test.dot', 'w') as out:
-        out.write('digraph A {\n')
-        for dweller in vault.dwellers.dwellers:
-            out.write('dweller_%s [label="%s"];\n' % (dweller.serializeId, dweller.getFullName()))
-            parents = dweller.relations.getParents()
-            if parents:
-                out.write('dweller_%s -> dweller_%s;\n' % (parents[0].serializeId, dweller.serializeId))
-                out.write('dweller_%s -> dweller_%s;\n' % (parents[1].serializeId, dweller.serializeId))
-        out.write('}\n')
 
 if __name__ == '__main__':
     config = {

@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
-from datahandle import Vault
+import argparse
+import StringIO
+from fosfile import Vault
 from codecs import open
 
 def getColorFromId(Id):
@@ -271,20 +273,40 @@ def dotOutputDweller(dweller, output):
                 output.write('%s -> %s [weight=-1000,style=dotted]\n' % (role, dwellerDotName(dweller, 'child')))
 
 def main(config):
-    vault = Vault('data/Vault1_New.sav')
+    vault = Vault(config['input'])
     couples = Couple.create(vault.dwellers.dwellers)
     brotherhoods = Brotherhoods.create(vault.dwellers.dwellers, couples)
-    with open('family.dot' ,'w', encoding='utf-8') as output:
-        output.write('digraph A {\n')
-        output.write('rankdir=TB\n')
-        for couple in couples:
-            couple.dotOutput(output)
-        for brotherhood in brotherhoods:
-            brotherhood.dotOutput(output)
-        for dweller in vault.dwellers.dwellers:
-            dotOutputDweller(dweller, output)
-        output.write('}\n')
+    if config['type'] == 'dot':
+        outputDot(vault, couples, brotherhoods, config['output'])
+    elif config['type'] == 'png':
+        sio = StringIO.StringIO()
+        outputDot(output)
+        import pydot
+        graph = pydot.graph_from_dot_data(sio.getvalue())
+        graph.write_png(config['output'])
+
+def outputDot(vault, couples, brotherhoods, output):
+    output.write('digraph A {\n')
+    output.write('rankdir=TB\n')
+    for couple in couples:
+        couple.dotOutput(output)
+    for brotherhood in brotherhoods:
+        brotherhood.dotOutput(output)
+    for dweller in vault.dwellers.dwellers:
+        dotOutputDweller(dweller, output)
+    output.write('}\n')
+
+def parseCli():
+    parser = argparse.ArgumentParser(description = 'Produce a family tree from a Fallout Shelter vault save')
+    parser.add_argument('--input', '-i', type=argparse.FileType('rb'), required=True, help='Path to the vault file')
+    parser.add_argument('--output', '-o', type=argparse.FileType('wb'), help='Path for the output file')
+    parser.add_argument('--type', '-t', choices=['png', 'dot'], default='png', help='Change the type of output (default to png)')
+    result = vars(parser.parse_args())
+    if result['output'] is None:
+        result['output'] = open('family.%s' % result['type'], 'wb')
+    return result
 
 if __name__ == '__main__':
-    config = {}
-    main(config)
+    cliConfig = parseCli()
+    main(cliConfig)
+
