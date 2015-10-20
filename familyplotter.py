@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
-import StringIO
+import cStringIO
 from fosfile import Vault
 from codecs import open
 
@@ -276,11 +276,12 @@ def main(config):
     vault = Vault(config['input'])
     couples = Couple.create(vault.dwellers.dwellers)
     brotherhoods = Brotherhoods.create(vault.dwellers.dwellers, couples)
+    sio = cStringIO.StringIO()
+    outputDot(vault, couples, brotherhoods, sio)
     if config['type'] == 'dot':
-        outputDot(vault, couples, brotherhoods, config['output'])
+        with open(config['output'], 'w') as output:
+            output.write(sio.getvalue())
     elif config['type'] == 'png':
-        sio = StringIO.StringIO()
-        outputDot(output)
         import pydot
         graph = pydot.graph_from_dot_data(sio.getvalue())
         graph.write_png(config['output'])
@@ -299,11 +300,11 @@ def outputDot(vault, couples, brotherhoods, output):
 def parseCli():
     parser = argparse.ArgumentParser(description = 'Produce a family tree from a Fallout Shelter vault save')
     parser.add_argument('--input', '-i', type=argparse.FileType('rb'), required=True, help='Path to the vault file')
-    parser.add_argument('--output', '-o', type=argparse.FileType('wb'), help='Path for the output file')
+    parser.add_argument('--output', '-o', help='Path for the output file')
     parser.add_argument('--type', '-t', choices=['png', 'dot'], default='png', help='Change the type of output (default to png)')
     result = vars(parser.parse_args())
     if result['output'] is None:
-        result['output'] = open('family.%s' % result['type'], 'wb')
+        result['output'] = 'family.%s' % result['type']
     return result
 
 if __name__ == '__main__':

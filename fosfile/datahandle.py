@@ -317,8 +317,6 @@ class Vault(VaultObject):
     AUTOPROPS = ['DeathclawManager(DeathclawManager)', 'LunchBoxCollectWindow', 'PromoCodesWindow', 'constructMgr(ConstructManager)', 'deviceName', 'dwellerSpawner', 'dwellers(DwellersList)', 'happinessManager', 'localNotificationMgr', 'objectiveMgr', 'ratingMgr', 'refugeeSpawner', 'survivalW', 'swrveEventsManager', 'taskMgr', 'timeMgr', 'tutorialManager', 'unlockableMgr', 'vault(VaultInfo)']
     def __init__(self, srcFile):
         jsonStr = decrypt(srcFile)
-        with open('debug.txt', 'w') as out:
-            out.write(jsonStr)
         jsonObj = json.loads(jsonStr)
         super(Vault, self).__init__(jsonObj)
         self.mergeDwellers()
